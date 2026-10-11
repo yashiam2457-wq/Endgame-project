@@ -1,0 +1,639 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GraphRAG based LLM Document Analyser</title>
+  <meta name="description"
+    content="Offline Enterprise GraphRAG — Intelligent Document Analysis with Knowledge Graphs and Multi-File Context Isolation">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet"
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap">
+  <link rel="stylesheet" href="/static/css/main.css">
+  <link rel="stylesheet" href="/static/css/components.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/cytoscape/3.26.0/cytoscape.min.js"></script>
+</head>
+
+<body>
+  <div id="app-container">
+
+    <!-- Sidebar Scroll Anchor Navigation -->
+    <nav class="sidebar">
+      <div class="brand">
+        <div class="brand-icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+            stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
+          </svg>
+        </div>
+        <span class="brand-text">Document Analyser</span>
+      </div>
+
+      <ul class="nav-list">
+        <li class="nav-item active" data-target="sec-dashboard">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="3" y="3" width="7" height="7" />
+            <rect x="14" y="3" width="7" height="7" />
+            <rect x="14" y="14" width="7" height="7" />
+            <rect x="3" y="14" width="7" height="7" />
+          </svg>
+          <span>Dashboard</span>
+        </li>
+        <li class="nav-item" data-target="sec-upload">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+            <polyline points="17 8 12 3 7 8" />
+            <line x1="12" y1="3" x2="12" y2="15" />
+          </svg>
+          <span>Ingestion &amp; Upload</span>
+        </li>
+        <li class="nav-item" data-target="sec-documents">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+            <polyline points="14 2 14 8 20 8" />
+            <line x1="16" y1="13" x2="8" y2="13" />
+            <line x1="16" y1="17" x2="8" y2="17" />
+          </svg>
+          <span>Document Library</span>
+        </li>
+        <li class="nav-item" data-target="sec-workbench">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
+          </svg>
+          <span>Workbench</span>
+        </li>
+        <li class="nav-item" data-target="sec-graph">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="18" cy="5" r="3" />
+            <circle cx="6" cy="12" r="3" />
+            <circle cx="18" cy="19" r="3" />
+            <line x1="8.59" y1="13.51" x2="15.42" y2="17.49" />
+            <line x1="15.41" y1="6.51" x2="8.59" y2="10.49" />
+          </svg>
+          <span>Knowledge Graph</span>
+        </li>
+        <li class="nav-item" data-target="sec-chat">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path
+              d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" />
+          </svg>
+          <span>Chat</span>
+        </li>
+        <li class="nav-item" data-target="sec-settings">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="3" />
+            <path
+              d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
+          </svg>
+          <span>System &amp; Logs</span>
+        </li>
+      </ul>
+
+      <div
+        style="padding:1rem 1.25rem;border-top:1px solid var(--border-color);font-size:0.75rem;color:var(--text-muted);">
+        <div>Status: <span id="sidebar-status" style="color:var(--success);font-weight:600;">Healthy</span></div>
+        <div id="sidebar-model" style="margin-top:2px;">LLM: Gemma-4 1B</div>
+      </div>
+    </nav>
+
+    <!-- Single Page Scrollable Canvas Shell -->
+    <div class="main-canvas" id="main-canvas">
+
+      <!-- Top Global Navigation Bar -->
+      <div class="top-bar">
+        <div style="display:flex;align-items:center;gap:0.75rem;">
+          <span class="top-bar-title">GraphRAG based LLM Document Analyser</span>
+        </div>
+        <div class="top-bar-meta">
+          <span class="scope-pill" id="top-scope-pill">Scope: Global Corpus</span>
+          <span class="top-bar-meta-chip" id="top-docs">&#8212; docs</span>
+          <span class="top-bar-meta-chip" id="top-chunks">&#8212; chunks</span>
+          <span class="health-badge" id="top-health">Core Online</span>
+        </div>
+      </div>
+
+      <!-- 1. Executive Operations Dashboard Section -->
+      <div class="section" id="sec-dashboard">
+        <div class="section-header">
+          <div class="section-icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="3" y="3" width="7" height="7" />
+              <rect x="14" y="3" width="7" height="7" />
+              <rect x="14" y="14" width="7" height="7" />
+              <rect x="3" y="14" width="7" height="7" />
+            </svg>
+          </div>
+          <div>
+            <div class="section-title">Operations Dashboard</div>
+            <div class="section-subtitle">Real-time system telemetries, index vectors, and memory status</div>
+          </div>
+        </div>
+
+        <!-- 1-Line Telemetry Meter Bar -->
+        <div class="dashboard-meter-bar">
+          <div class="meter-bar-left">
+            <div class="meter-item">
+              <span class="meter-item-label">Documents</span>
+              <span class="meter-item-val" id="dash-docs-val">0</span>
+            </div>
+            <div class="meter-divider"></div>
+            <div class="meter-item">
+              <span class="meter-item-label">Chunks</span>
+              <span class="meter-item-val" id="dash-chunks-val">0</span>
+            </div>
+            <div class="meter-divider"></div>
+            <div class="meter-item">
+              <span class="meter-item-label">FAISS Vectors</span>
+              <span class="meter-item-val" id="dash-vectors-val">0</span>
+            </div>
+            <div class="meter-divider"></div>
+            <div class="meter-item">
+              <span class="meter-item-label">RAM Usage</span>
+              <span class="meter-item-val" id="dash-ram-val">0 MB</span>
+            </div>
+            <div class="meter-divider"></div>
+            <div class="meter-item">
+              <span class="meter-item-label">Queries Processed</span>
+              <span class="meter-item-val" id="dash-queries-val">0</span>
+            </div>
+            <div class="meter-divider"></div>
+            <div class="meter-item">
+              <span class="meter-item-label">Avg Latency</span>
+              <span class="meter-item-val" id="dash-latency-val">0 ms</span>
+            </div>
+            <div class="meter-divider"></div>
+            <div class="meter-item">
+              <span class="meter-item-label">Cache Hit Rate</span>
+              <span class="meter-item-val" id="dash-cache-val">100%</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="glass-card">
+          <div style="font-size:1.1rem;font-weight:700;margin-bottom:0.5rem;">GraphRAG based LLM Document Analyser</div>
+          <p style="color:var(--text-secondary);font-size:0.88rem;max-width:700px;line-height:1.6;">
+            High-performance offline GraphRAG engine combining sentence-transformer vector embeddings, Neo4j knowledge
+            graphs, and local LLM reasoning for zero-hallucination document synthesis.
+          </p>
+        </div>
+      </div>
+
+      <!-- 2. Ingestion & Upload Section -->
+      <div class="section" id="sec-upload">
+        <div class="section-header">
+          <div class="section-icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+              <polyline points="17 8 12 3 7 8" />
+              <line x1="12" y1="3" x2="12" y2="15" />
+            </svg>
+          </div>
+          <div>
+            <div class="section-title">Document Ingestion &amp; Chunking</div>
+            <div class="section-subtitle">Upload PDF, TXT, MD, DOCX documents to parse vectors &amp; extract entities
+            </div>
+          </div>
+        </div>
+
+        <div class="glass-card">
+          <div class="drop-zone" id="upload-drop-zone">
+            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+              style="color:var(--accent-primary);margin-bottom:0.75rem;">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+              <polyline points="17 8 12 3 7 8" />
+              <line x1="12" y1="3" x2="12" y2="15" />
+            </svg>
+            <div style="font-size:1.05rem;font-weight:700;color:var(--text-primary);">Drag &amp; Drop Documents Here
+            </div>
+            <div style="font-size:0.82rem;color:var(--text-secondary);margin-top:0.35rem;">Supports PDF, TXT, MD, DOCX
+              files</div>
+            <input type="file" id="file-input-element" multiple accept=".pdf,.txt,.md,.docx" style="display:none;" />
+            <button class="btn btn-primary" style="margin-top:1.25rem;"
+              onclick="document.getElementById('file-input-element').click()">Select Files</button>
+          </div>
+          <div id="upload-progress-container"
+            style="margin-top:1.25rem;display:none;background:rgba(255,255,255,0.03);padding:1rem;border-radius:10px;border:1px solid rgba(255,255,255,0.08);">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.45rem;">
+              <span id="upload-status-text"
+                style="font-size:0.88rem;font-weight:600;color:var(--text-primary);">Processing document
+                upload...</span>
+              <span id="upload-progress-percent"
+                style="font-size:0.88rem;font-weight:700;color:var(--accent-primary);">0%</span>
+            </div>
+            <div class="progress-bar-track"
+              style="width:100%;height:10px;background:rgba(255,255,255,0.08);border-radius:6px;overflow:hidden;border:1px solid rgba(255,255,255,0.12);">
+              <div id="upload-progress-fill"
+                style="width:0%;height:100%;background:linear-gradient(90deg, #6366f1, #a855f7, #ec4899);border-radius:6px;transition:width 0.3s ease;">
+              </div>
+            </div>
+            <div id="upload-detail-text" style="font-size:0.78rem;color:var(--text-secondary);margin-top:0.4rem;">
+              Initializing pipeline...</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 3. Document Library Section -->
+      <div class="section" id="sec-documents">
+        <div class="section-header" style="justify-content:space-between;">
+          <div style="display:flex;align-items:center;gap:0.85rem;">
+            <div class="section-icon">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                <polyline points="14 2 14 8 20 8" />
+                <line x1="16" y1="13" x2="8" y2="13" />
+                <line x1="16" y1="17" x2="8" y2="17" />
+              </svg>
+            </div>
+            <div>
+              <div class="section-title">Document Repository Library</div>
+              <div class="section-subtitle">Manage ingested files, inspect text chunks, and control knowledge boundaries
+              </div>
+            </div>
+          </div>
+          <button class="btn btn-secondary btn-sm" id="btn-sync-index" onclick="triggerBatchIndex()">Sync &amp; Index
+            All Pending</button>
+        </div>
+
+        <div class="glass-card" style="padding:0;">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Document Name</th>
+                <th>Type</th>
+                <th>Chunks</th>
+                <th>Created At</th>
+                <th style="text-align:right;">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="doc-library-tbody">
+              <!-- Rendered via JS -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- 4. Multi-File Workbench Section -->
+      <div class="section" id="sec-workbench">
+        <div class="section-header">
+          <div class="section-icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
+            </svg>
+          </div>
+          <div>
+            <div class="section-title">Workbench &amp; Context Isolation</div>
+            <div class="section-subtitle">Organize isolated document scopes, lock RAG boundaries, and inspect chunks
+            </div>
+          </div>
+        </div>
+
+        <div class="workbench-grid">
+          <!-- File Selector Panel -->
+          <div class="file-selector-panel">
+            <div class="panel-header">
+              <span class="panel-title">Document Selection</span>
+              <div style="display:flex;gap:0.5rem;align-items:center;">
+                <button class="btn btn-secondary btn-sm" id="wb-select-all-btn" title="Select All Files">Select
+                  All</button>
+                <button class="btn btn-secondary btn-sm" id="wb-clear-select-btn"
+                  title="Clear Selections">Clear</button>
+              </div>
+            </div>
+            <div class="workspace-bar" id="workspace-pills-container">
+              <!-- Rendered by JS -->
+            </div>
+            <div class="file-search-bar">
+              <input type="text" class="file-search-input" id="workbench-file-search"
+                placeholder="Filter files by name..." />
+            </div>
+            <div class="file-list" id="workbench-file-list">
+              <!-- File item rows rendered by JS -->
+            </div>
+            <div class="batch-action-bar">
+              <button class="btn btn-secondary btn-sm" id="wb-edit-ws-btn" style="display:none;">Edit Workspace</button>
+              <button class="btn btn-primary btn-sm" id="wb-assign-ws-btn">+ New Workspace</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="workbench-query-bar">
+          <span style="font-size:0.84rem;font-weight:600;color:var(--text-secondary);white-space:nowrap;">Quick Scoped
+            Query:</span>
+          <input type="text" id="workbench-query-input" class="chat-input"
+            placeholder="Ask a question strictly grounded in the active scope..." autocomplete="off" />
+          <button class="btn btn-primary" id="workbench-query-btn">Ask RAG</button>
+        </div>
+      </div>
+
+      <!-- 5. Professional Enterprise Knowledge Graph Section -->
+      <div class="section" id="sec-graph">
+        <div class="section-header">
+          <div class="section-icon" style="background:rgba(99,102,241,0.15);border-color:rgba(99,102,241,0.3);">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#818cf8" stroke-width="2">
+              <circle cx="18" cy="5" r="3" />
+              <circle cx="6" cy="12" r="3" />
+              <circle cx="18" cy="19" r="3" />
+              <line x1="8.59" y1="13.51" x2="15.42" y2="17.49" />
+              <line x1="15.41" y1="6.51" x2="8.59" y2="10.49" />
+            </svg>
+          </div>
+          <div>
+            <div class="section-title">RAG Graph Explorer</div>
+            <div class="section-subtitle">Entity-relationship map with interactive topology, scope filtering,
+              and entity inspector</div>
+          </div>
+        </div>
+
+        <!-- Live Stats Telemetry Bar -->
+        <div class="graph-stats-bar">
+          <div class="gs-item"><span class="gs-label">Entities</span><span class="gs-val" id="graph-stat-nodes">0</span>
+          </div>
+          <div class="gs-sep"></div>
+          <div class="gs-item"><span class="gs-label">Relationships</span><span class="gs-val"
+              id="graph-stat-edges">0</span></div>
+          <div class="gs-sep"></div>
+          <div class="gs-item"><span class="gs-label">Avg Degree</span><span class="gs-val"
+              id="graph-stat-degree">0.00</span></div>
+          <div class="gs-sep"></div>
+          <div class="gs-item"><span class="gs-label">Density</span><span class="gs-val"
+              id="graph-stat-density">0.0000</span></div>
+          <div class="gs-sep"></div>
+          <div class="gs-item"><span class="gs-label">Components</span><span class="gs-val"
+              id="graph-stat-components">—</span></div>
+          <div class="gs-sep"></div>
+          <div class="gs-item"><span class="gs-label">Top Hub</span><span class="gs-val gs-hub"
+              id="graph-stat-tophub">—</span></div>
+          <div class="gs-sep"></div>
+          <div class="gs-item"><span class="gs-label">Zoom</span><span class="gs-val" id="graph-stat-zoom">100%</span>
+          </div>
+        </div>
+
+        <!-- Entity Type Filter Bar -->
+        <div class="graph-legend-bar" id="graph-filter-bar">
+          <span class="gfb-label">Filter:</span>
+          <button class="graph-filter-pill active" data-type="ALL">All</button>
+          <button class="graph-filter-pill" data-type="PERSON" style="--pill-color:#4ade80;"><span
+              class="dot"></span>Person</button>
+          <button class="graph-filter-pill" data-type="ORGANIZATION" style="--pill-color:#a78bfa;"><span
+              class="dot"></span>Organization</button>
+          <button class="graph-filter-pill" data-type="CONCEPT" style="--pill-color:#fb923c;"><span
+              class="dot"></span>Concept</button>
+          <button class="graph-filter-pill" data-type="TECHNOLOGY" style="--pill-color:#22d3ee;"><span
+              class="dot"></span>Technology</button>
+          <button class="graph-filter-pill" data-type="LOCATION" style="--pill-color:#f87171;"><span
+              class="dot"></span>Location</button>
+          <button class="graph-filter-pill" data-type="DOCUMENT" style="--pill-color:#60a5fa;"><span
+              class="dot"></span>Document</button>
+        </div>
+
+        <!-- Main Graph Canvas Shell -->
+        <div class="graph-container">
+
+          <!-- Floating Search + Toolbar -->
+          <div class="graph-toolbar">
+            <div style="position:relative;display:flex;align-items:center;">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+                style="position:absolute;left:0.55rem;opacity:0.45;pointer-events:none;">
+                <circle cx="11" cy="11" r="8" />
+                <line x1="21" y1="21" x2="16.65" y2="16.65" />
+              </svg>
+              <input type="text" id="graph-entity-input" class="file-search-input"
+                style="width:185px;padding-left:1.9rem;font-size:0.8rem;" placeholder="Search entity…" />
+            </div>
+            <button class="btn btn-secondary btn-sm" id="btn-graph-search">Find</button>
+            <div class="graph-toolbar-sep"></div>
+            <button class="btn btn-secondary btn-sm" id="btn-graph-fit">Fit All</button>
+            <button class="btn btn-secondary btn-sm" id="btn-graph-reset">Re-layout</button>
+          </div>
+
+          <!-- Cytoscape Canvas -->
+          <div id="cy-canvas"></div>
+
+          <!-- Floating Category Legend -->
+          <div class="graph-legend-float" id="graph-legend"></div>
+
+          <!-- Loading Overlay -->
+          <div id="graph-loading-overlay" class="graph-state-overlay" style="display:none;">
+            <div class="graph-spinner"></div>
+            <div class="graph-state-text">Computing graph layout…</div>
+          </div>
+
+          <!-- Empty State Overlay -->
+          <div id="graph-empty-overlay" class="graph-state-overlay" style="display:none;">
+            <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" stroke-width="1.4"
+              style="margin-bottom:1rem;opacity:0.5;">
+              <circle cx="18" cy="5" r="3" />
+              <circle cx="6" cy="12" r="3" />
+              <circle cx="18" cy="19" r="3" />
+              <line x1="8.59" y1="13.51" x2="15.42" y2="17.49" />
+              <line x1="15.41" y1="6.51" x2="8.59" y2="10.49" />
+            </svg>
+            <div class="graph-state-title">No graph data</div>
+            <div class="graph-state-text">Upload and index documents to extract entities and build the knowledge graph.
+              Select files in Workbench to filter scope.</div>
+          </div>
+
+          <!-- Entity Inspector Side Panel -->
+          <div class="graph-inspector" id="graph-inspector-panel" style="display:none;">
+            <div class="graph-inspector-header">
+              <div id="graph-inspector-title" class="gi-title-row">
+                <span style="font-weight:700;color:var(--text-primary);">Entity Inspector</span>
+              </div>
+              <button class="modal-close"
+                onclick="document.getElementById('graph-inspector-panel').style.display='none'">&times;</button>
+            </div>
+            <div id="graph-inspector-content" class="graph-inspector-body">
+              <div
+                style="padding:2rem 1rem;text-align:center;color:var(--text-muted);font-size:0.82rem;line-height:1.5;">
+                Click any node or relationship on the canvas to inspect its properties.
+              </div>
+            </div>
+          </div>
+
+        </div><!-- /graph-container -->
+      </div>
+
+      <!-- 6. Reasoning Chat Section -->
+
+      <div class="section" id="sec-chat">
+        <div class="section-header">
+          <div class="section-icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path
+                d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" />
+            </svg>
+          </div>
+          <div>
+            <div class="section-title">Chat</div>
+            <div class="section-subtitle">Synthesize multi-hop grounded answers with inline source citations</div>
+          </div>
+        </div>
+
+        <div class="chat-container">
+          <div class="chat-history" id="chat-history-container">
+            <div class="msg-bubble msg-bot">
+              Hello! I am your GraphRAG Assistant. Ask me any question based on uploaded documents or active workspace
+              context.
+            </div>
+          </div>
+          <div class="chat-bar">
+            <input type="text" id="chat-input-field" class="chat-input"
+              placeholder="Ask a question grounded in knowledge graph..." autocomplete="off" />
+            <button class="btn btn-primary" id="chat-send-btn">Send</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 7. System Settings & Logs Section -->
+      <div class="section" id="sec-settings">
+        <div class="section-header">
+          <div class="section-icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="3" />
+              <path
+                d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
+            </svg>
+          </div>
+          <div>
+            <div class="section-title">System Config &amp; Logs</div>
+            <div class="section-subtitle">Monitor server logs, health metrics, and active configurations</div>
+          </div>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;">
+
+          <!-- Live Sub-System Health Status Panel -->
+          <div class="glass-card" style="grid-column:1/-1;">
+            <div
+              style="font-weight:700;font-size:0.95rem;margin-bottom:0.85rem;display:flex;align-items:center;justify-content:space-between;">
+              <span>Sub-System Health Monitor</span>
+              <div style="display:flex;gap:0.5rem;">
+                <span id="status-uptime"
+                  style="font-size:0.78rem;font-weight:600;color:var(--text-muted);font-family:var(--font-mono);">—</span>
+                <button class="btn btn-secondary btn-sm" onclick="fetchHealthAndMetrics()">Refresh</button>
+              </div>
+            </div>
+            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:0.75rem;">
+              <div class="health-status-card">
+                <div class="hsc-label">Neo4j Graph DB</div>
+                <div class="hsc-status" id="status-neo4j">● Checking…</div>
+              </div>
+              <div class="health-status-card">
+                <div class="hsc-label">FAISS Vector Store</div>
+                <div class="hsc-status" id="status-faiss">● Checking…</div>
+              </div>
+              <div class="health-status-card">
+                <div class="hsc-label">SQLite Store</div>
+                <div class="hsc-status" id="status-sqlite">● Checking…</div>
+              </div>
+              <div class="health-status-card">
+                <div class="hsc-label">Documents Indexed</div>
+                <div class="hsc-val" id="hsc-docs">—</div>
+              </div>
+              <div class="health-status-card">
+                <div class="hsc-label">Vector Chunks</div>
+                <div class="hsc-val" id="hsc-vectors">—</div>
+              </div>
+              <div class="health-status-card">
+                <div class="hsc-label">RAM Used / Total</div>
+                <div class="hsc-val" id="hsc-ram">—</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- System Configuration Panel -->
+          <div class="glass-card">
+            <div
+              style="font-weight:700;font-size:0.95rem;margin-bottom:0.75rem;display:flex;align-items:center;justify-content:space-between;">
+              <span>System Configuration</span>
+              <button class="btn btn-secondary btn-sm" onclick="loadSystemConfig()">Refresh</button>
+            </div>
+            <div id="sys-config-container"
+              style="font-size:0.82rem;color:var(--text-secondary);display:flex;flex-direction:column;gap:0.5rem;">
+              Loading system configuration...
+            </div>
+          </div>
+
+          <!-- Server Activity Logs -->
+          <div class="glass-card">
+            <div
+              style="font-weight:700;font-size:0.95rem;margin-bottom:0.75rem;display:flex;align-items:center;justify-content:space-between;">
+              <span>Server Logs</span>
+              <button class="btn btn-secondary btn-sm" onclick="loadLogs()">Refresh Logs</button>
+            </div>
+            <pre id="sys-logs-pre"
+              style="font-family:var(--font-mono);font-size:0.8rem;background:#090d16;padding:1rem;border-radius:var(--radius-md);height:280px;overflow-y:auto;color:#a5b4fc;">Loading server logs...</pre>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Chunk Inspector Modal Popup -->
+  <div class="modal-overlay" id="chunk-modal">
+    <div class="modal-box">
+      <div class="modal-header">
+        <div class="modal-title" id="chunk-modal-title">Document Chunks</div>
+        <button class="modal-close"
+          onclick="document.getElementById('chunk-modal').classList.remove('open')">&times;</button>
+      </div>
+      <div class="modal-body" id="chunk-modal-body">
+        Loading chunks...
+      </div>
+    </div>
+  </div>
+
+  <!-- Command Palette Modal Popup -->
+  <div class="modal-overlay" id="cmd-modal">
+    <div class="modal-box" style="max-width:600px;">
+      <div class="modal-header">
+        <div class="modal-title">Quick Nav</div>
+        <button class="modal-close"
+          onclick="document.getElementById('cmd-modal').classList.remove('open')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div style="display:flex;flex-direction:column;gap:0.5rem;" id="cmd-options-list">
+          <!-- Rendered via JS -->
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Workspace Creation Modal Popup -->
+  <div class="modal-overlay" id="ws-modal">
+    <div class="modal-box" style="max-width:460px;">
+      <div class="modal-header">
+        <div class="modal-title" id="ws-modal-title">Create New Workspace</div>
+        <button class="modal-close"
+          onclick="document.getElementById('ws-modal').classList.remove('open')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div style="display:flex;flex-direction:column;gap:1rem;">
+          <div>
+            <label style="font-size:0.8rem;color:var(--text-secondary);display:block;margin-bottom:0.4rem;">Workspace
+              Name</label>
+            <input type="text" id="ws-modal-input" class="chat-input" placeholder="e.g., Financial Q3 Reports"
+              style="width:100%;" />
+          </div>
+          <div style="font-size:0.8rem;color:var(--text-muted);" id="ws-modal-info">
+            Selected documents will be assigned to this workspace context.
+          </div>
+          <div style="display:flex;justify-content:flex-end;gap:0.5rem;margin-top:0.5rem;">
+            <button class="btn btn-secondary btn-sm"
+              onclick="document.getElementById('ws-modal').classList.remove('open')">Cancel</button>
+            <button class="btn btn-primary btn-sm" id="ws-modal-save-btn">Save Workspace</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="/static/js/main.js"></script>
+  <script src="/static/js/workbench.js"></script>
+  <script src="/static/js/graph.js?v=20260808_10"></script>
+  <script src="/static/js/chat.js"></script>
+</body>
+
+</html>

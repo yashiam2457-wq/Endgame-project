@@ -1,0 +1,5 @@
+Enterprise GraphRAG Architecture and Implementation Test Sample.
+
+GraphRAG is a Structured, Knowledge Graph Augmented Retrieval Systems.
+It extracts entities such as Gemma 3 1B, PyTorch, FAISS, and Neo4j.
+It connects vector similarity search with structured graph traversal.
