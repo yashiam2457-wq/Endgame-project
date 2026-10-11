@@ -1,0 +1,98 @@
+[build-system]
+requires = ["setuptools>=70.0", "wheel"]
+build-backend = "setuptools.backends.legacy:build"
+
+[project]
+name = "enterprise-graphrag"
+version = "1.0.0"
+description = "Enterprise-grade offline GraphRAG system using Gemma 4 1B, Neo4j, FAISS, and FastAPI"
+authors = [{ name = "Enterprise GraphRAG Team" }]
+requires-python = ">=3.11"
+readme = "README.md"
+license = { text = "MIT" }
+keywords = ["graphrag", "knowledge-graph", "rag", "llm", "neo4j", "faiss", "gemma"]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Developers",
+    "Programming Language :: Python :: 3.11",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+
+[project.scripts]
+graphrag = "run:main"
+graphrag-index = "index:main"
+
+[tool.black]
+line-length = 100
+target-version = ["py311"]
+include = '\.pyi?$'
+extend-exclude = '''
+/(
+  | logs
+  | cache
+  | data
+  | checkpoints
+  | frontend
+)/
+'''
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+select = [
+    "E",   # pycodestyle errors
+    "W",   # pycodestyle warnings
+    "F",   # pyflakes
+    "I",   # isort
+    "B",   # flake8-bugbear
+    "C4",  # flake8-comprehensions
+    "UP",  # pyupgrade
+]
+ignore = [
+    "E501",  # line too long (handled by black)
+    "B008",  # function calls in default arguments (FastAPI pattern)
+    "B904",  # raise from inside except
+]
+exclude = [
+    ".git",
+    "__pycache__",
+    "logs/",
+    "cache/",
+    "data/",
+    "frontend/",
+]
+
+[tool.mypy]
+python_version = "3.11"
+strict = false
+warn_return_any = true
+warn_unused_configs = true
+ignore_missing_imports = true
+exclude = ["tests/", "frontend/", "logs/", "cache/"]
+
+[tool.pytest.ini_options]
+minversion = "8.0"
+asyncio_mode = "auto"
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+log_cli = true
+log_cli_level = "INFO"
+addopts = [
+    "--tb=short",
+    "--cov=.",
+    "--cov-report=term-missing",
+]
+
+[tool.coverage.run]
+source = ["."]
+omit = [
+    "tests/*",
+    "frontend/*",
+    "logs/*",
+    "cache/*",
+    "data/*",
+    "setup.py",
+    "run.py",
+]

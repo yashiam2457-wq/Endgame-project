@@ -1,0 +1,154 @@
+app:
+  name: "Enterprise GraphRAG"
+  version: "1.0.0"
+  host: "0.0.0.0"
+  port: 8000
+  debug: true
+  workers: 1
+  reload: true
+
+model:
+  generation:
+    name: "google/gemma-4-e4b-it"
+    cache_dir: "./checkpoints"
+    device: "auto"            # auto | cuda | cpu
+    quantization: "int8"      # fp16 | int8 | none
+    max_new_tokens: 1024
+    temperature: 0.1
+    top_p: 0.9
+    repetition_penalty: 1.1
+    batch_size: 4
+    lazy_load: true
+    inference_queue_size: 32
+  embedding:
+    name: "sentence-transformers/all-MiniLM-L6-v2"
+    device: "auto"
+    batch_size: 64
+    max_seq_length: 512
+    normalize_embeddings: true
+    cache_dir: "./checkpoints"
+
+neo4j:
+  uri: "bolt://localhost:7687"
+  username: "neo4j"
+  password: "password"
+  database: "neo4j"
+  max_connection_pool_size: 50
+  connection_timeout: 30
+  encrypted: false
+
+faiss:
+  index_path: "./data/faiss_index"
+  index_type: "IVFFlat"       # Flat | IVFFlat | IVFPQ
+  nlist: 100
+  nprobe: 10
+  top_k: 10
+  use_gpu: false              # set true if faiss-gpu is installed
+  dimension: 384              # matches all-MiniLM-L6-v2
+
+sqlite:
+  path: "./data/graphrag.db"
+  cache_path: "./cache/cache.db"
+  pool_size: 5
+  echo: false
+
+chunking:
+  strategy: "recursive"       # fixed | sliding | recursive | sentence | semantic | hierarchical
+  chunk_size: 512
+  chunk_overlap: 64
+  min_length: 50
+  max_length: 2048
+  sentence_model: "en_core_web_sm"
+
+retrieval:
+  top_k: 10
+  graph_hop_depth: 2
+  faiss_weight: 0.5
+  graph_weight: 0.5
+  rerank_top_k: 5
+  mmr_lambda: 0.7
+  max_context_tokens: 3072
+  enable_compression: true
+  dedup_threshold: 0.95
+
+generation:
+  max_context_tokens: 3072
+  citation_format: "inline"   # inline | footnote
+  confidence_threshold: 0.3
+  fallback_message: "I don't have sufficient information to answer this question based on the provided documents."
+
+entity_extraction:
+  batch_size: 8
+  max_retries: 3
+  retry_delay: 1.0
+  types:
+    - PERSON
+    - ORGANIZATION
+    - LOCATION
+    - EVENT
+    - PRODUCT
+    - CONCEPT
+    - TECHNOLOGY
+    - DATE
+    - NUMBER
+    - POLICY
+    - LAW
+    - COMPANY
+    - DOCUMENT
+    - DEPENDENCY
+
+logging:
+  level: "INFO"
+  log_dir: "./logs"
+  rotation: "100 MB"
+  retention: "30 days"
+  sinks:
+    app: "app.log"
+    retrieval: "retrieval.log"
+    graph: "graph.log"
+    embedding: "embedding.log"
+    generation: "generation.log"
+    errors: "errors.log"
+    performance: "performance.log"
+    api: "api.log"
+
+cache:
+  enabled: true
+  embedding_ttl: 86400        # seconds (24h)
+  llm_ttl: 3600               # seconds (1h)
+  graph_ttl: 1800             # seconds (30m)
+  query_ttl: 900              # seconds (15m)
+  max_size_mb: 2048
+
+performance:
+  worker_threads: 4
+  batch_processing_size: 32
+  pin_memory: true
+  mixed_precision: true
+  memory_map: true
+  background_indexing: true
+
+api:
+  prefix: "/api/v1"
+  cors_origins:
+    - "http://localhost:8000"
+    - "http://127.0.0.1:8000"
+  pagination:
+    default_page_size: 20
+    max_page_size: 100
+  rate_limit:
+    enabled: false
+    requests_per_minute: 60
+  auth:
+    enabled: false
+    type: "api_key"
+
+paths:
+  data_dir: "./data"
+  upload_dir: "./data/uploads"
+  index_dir: "./data/faiss_index"
+  log_dir: "./logs"
+  cache_dir: "./cache"
+  checkpoint_dir: "./checkpoints"
+  static_dir: "./frontend/static"
+  templates_dir: "./frontend/templates"
