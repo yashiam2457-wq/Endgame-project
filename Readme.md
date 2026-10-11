@@ -17,14 +17,12 @@ Built with FastAPI, PyTorch, Gemma 4 1B Instruct, SentenceTransformers, FAISS, N
 ## Requirements
 - Windows 11
 - Python 3.11
-- NVIDIA RTX GPU with CUDA (or CPU fallback)
 - Neo4j Community Edition (Local Server running on `bolt://localhost:7687`)
 
 ## Installation & Setup
 
 1. **Clone & Virtual Environment**:
    ```bash
-   cd "C:\Users\Loq\Documents\programs\final year project\graph"
    python -m venv venv
    .\venv\Scripts\activate
    ```
